@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # Frontend React application
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - backend
+
+  # Backend FastAPI application
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+    environment:
+      - DATABASE_URL=sqlite:///./cloudplus_study.db
+      - PYTHONUNBUFFERED=1
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # PostgreSQL database (optional, for production)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     - POSTGRES_USER=cloudplus
+  #     - POSTGRES_PASSWORD=cloudplus_secret
+  #     - POSTGRES_DB=cloudplus_study
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+
+  # Redis for caching (optional)
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+
+  # Practice lab containers
+  lab-nginx:
+    image: nginx:alpine
+    container_name: cloudplus-lab-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./configs/nginx.conf:/etc/nginx/nginx.conf:ro
+    profiles:
+      - labs
+
+  lab-docker:
+    image: docker:dind
+    container_name: cloudplus-lab-docker
+    privileged: true
+    ports:
+      - "2375:2375"
+    volumes:
+      - docker_certs:/certs
+      - docker_data:/var/lib/docker
+    profiles:
+      - labs
+
+# volumes:
+#   postgres_data:
+#   redis_data:
+#   docker_certs:
+#   docker_data:
