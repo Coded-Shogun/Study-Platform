@@ -7,7 +7,9 @@ class Question(Base):
     __tablename__ = "questions"
 
     id = Column(Integer, primary_key=True, index=True)
-    domain = Column(String, nullable=False, index=True)
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
+    domain = Column(String, nullable=False, index=True)  # Keep for backward compatibility
     question_text = Column(Text, nullable=False)
     option_a = Column(String, nullable=False)
     option_b = Column(String, nullable=False)
@@ -16,7 +18,12 @@ class Question(Base):
     correct_answer = Column(String, nullable=False)
     explanation = Column(Text, nullable=False)
     difficulty = Column(String, default="medium")
+    student_level = Column(String, nullable=True)  # primary, high_school, tertiary
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    subject = relationship("Subject", back_populates="questions")
+    category = relationship("Category", back_populates="questions")
 
 class QuizSession(Base):
     __tablename__ = "quiz_sessions"
