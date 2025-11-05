@@ -8,6 +8,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from app.utils.database import SessionLocal, engine, Base
+from app.utils.security import get_password_hash
 from app.models import User, Subject, Category, Question, UserRole, StudentLevel
 
 def init_database():
@@ -204,7 +205,7 @@ def init_database():
             User(
                 username="admin",
                 email="admin@studyplatform.com",
-                hashed_password="admin123",  # TODO: Hash in production
+                hashed_password=get_password_hash("Admin123!"),
                 full_name="System Administrator",
                 role=UserRole.ADMIN,
                 student_level=None
@@ -212,7 +213,7 @@ def init_database():
             User(
                 username="teacher",
                 email="teacher@studyplatform.com",
-                hashed_password="teacher123",  # TODO: Hash in production
+                hashed_password=get_password_hash("Teacher123!"),
                 full_name="Jane Teacher",
                 role=UserRole.TEACHER,
                 student_level=None
@@ -220,7 +221,7 @@ def init_database():
             User(
                 username="primary_student",
                 email="primary@student.com",
-                hashed_password="student123",  # TODO: Hash in production
+                hashed_password=get_password_hash("Student123!"),
                 full_name="Tommy Primary",
                 role=UserRole.STUDENT,
                 student_level=StudentLevel.PRIMARY
@@ -228,7 +229,7 @@ def init_database():
             User(
                 username="highschool_student",
                 email="highschool@student.com",
-                hashed_password="student123",  # TODO: Hash in production
+                hashed_password=get_password_hash("Student123!"),
                 full_name="Sarah Highschool",
                 role=UserRole.STUDENT,
                 student_level=StudentLevel.HIGH_SCHOOL
@@ -236,7 +237,7 @@ def init_database():
             User(
                 username="university_student",
                 email="university@student.com",
-                hashed_password="student123",  # TODO: Hash in production
+                hashed_password=get_password_hash("Student123!"),
                 full_name="Mike University",
                 role=UserRole.STUDENT,
                 student_level=StudentLevel.TERTIARY
@@ -253,11 +254,13 @@ def init_database():
         print("="*50)
         print("\nSample User Credentials:")
         print("-" * 50)
-        print("Admin:              admin / admin123")
-        print("Teacher:            teacher / teacher123")
-        print("Primary Student:    primary_student / student123")
-        print("High School:        highschool_student / student123")
-        print("University:         university_student / student123")
+        print("Admin:              admin / Admin123!")
+        print("Teacher:            teacher / Teacher123!")
+        print("Primary Student:    primary_student / Student123!")
+        print("High School:        highschool_student / Student123!")
+        print("University:         university_student / Student123!")
+        print("-" * 50)
+        print("\nNote: All passwords are now securely hashed using bcrypt.")
         print("-" * 50)
 
     except Exception as e:

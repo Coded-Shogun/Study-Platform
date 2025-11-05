@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from ..utils.database import get_db
+from ..utils.auth import get_admin_or_teacher
 from ..models import Subject, Category, Question, User, UserRole, StudentLevel
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -88,35 +89,13 @@ class QuestionResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# ==================== Dependency: Admin Check ====================
-
-def get_current_admin_user(user_id: int = 1, db: Session = Depends(get_db)) -> User:
-    """
-    TODO: Implement proper JWT authentication
-    For now, accepts user_id as parameter
-    """
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
-        )
-
-    if user.role not in [UserRole.ADMIN, UserRole.TEACHER]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized. Admin or Teacher role required."
-        )
-
-    return user
-
 # ==================== Subject Endpoints ====================
 
 @router.post("/subjects", response_model=SubjectResponse, status_code=status.HTTP_201_CREATED)
 def create_subject(
     subject: SubjectCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Create a new subject/course"""
     # Check if subject with same code already exists
@@ -156,7 +135,7 @@ def update_subject(
     subject_id: int,
     subject: SubjectCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Update a subject"""
     db_subject = db.query(Subject).filter(Subject.id == subject_id).first()
@@ -174,7 +153,7 @@ def update_subject(
 def delete_subject(
     subject_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Delete a subject"""
     db_subject = db.query(Subject).filter(Subject.id == subject_id).first()
@@ -191,7 +170,7 @@ def delete_subject(
 def create_category(
     category: CategoryCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Create a new category within a subject"""
     # Verify subject exists
@@ -232,7 +211,7 @@ def update_category(
     category_id: int,
     category: CategoryCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Update a category"""
     db_category = db.query(Category).filter(Category.id == category_id).first()
@@ -250,7 +229,7 @@ def update_category(
 def delete_category(
     category_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Delete a category"""
     db_category = db.query(Category).filter(Category.id == category_id).first()
@@ -267,7 +246,7 @@ def delete_category(
 def create_question(
     question: QuestionCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Create a new question"""
     # Verify subject exists
@@ -325,7 +304,7 @@ def update_question(
     question_id: int,
     question: QuestionUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Update a question"""
     db_question = db.query(Question).filter(Question.id == question_id).first()
@@ -344,7 +323,7 @@ def update_question(
 def delete_question(
     question_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Delete a question"""
     db_question = db.query(Question).filter(Question.id == question_id).first()
@@ -361,7 +340,7 @@ def delete_question(
 def bulk_create_questions(
     questions: List[QuestionCreate],
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Bulk create questions"""
     created_questions = []
@@ -381,7 +360,7 @@ def bulk_create_questions(
 @router.get("/statistics")
 def get_admin_statistics(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_admin_or_teacher)
 ):
     """Get administrative statistics"""
     total_subjects = db.query(Subject).count()

@@ -133,12 +133,15 @@ function RegisterPage() {
             <input
               type="password"
               required
-              minLength={6}
+              minLength={8}
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cloudplus-500"
-              placeholder="At least 6 characters"
+              placeholder="Enter a strong password"
             />
+            <p className="text-xs text-gray-600 mt-1">
+              Must be at least 8 characters with uppercase, lowercase, and a digit
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
