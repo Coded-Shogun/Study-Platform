@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from .utils.database import engine, Base
-from .api import quiz, progress, labs, auth
+from .api import quiz, progress, labs, auth, admin
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -37,6 +37,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(quiz.router, prefix="/api/quiz", tags=["quiz"])
 app.include_router(progress.router, prefix="/api/progress", tags=["progress"])
 app.include_router(labs.router, prefix="/api/labs", tags=["labs"])
+app.include_router(admin.router, tags=["admin"])
 
 @app.get("/")
 async def root():

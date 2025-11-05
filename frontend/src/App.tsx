@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { BookOpen, Code, BarChart3, Calendar } from 'lucide-react'
+import { BookOpen, Code, BarChart3, Calendar, Settings } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import QuizPage from './pages/QuizPage'
 import LabsPage from './pages/LabsPage'
 import ProgressPage from './pages/ProgressPage'
+import AdminPage from './pages/AdminPage'
 
-type TabType = 'dashboard' | 'quiz' | 'labs' | 'progress'
+type TabType = 'dashboard' | 'quiz' | 'labs' | 'progress' | 'admin'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard')
@@ -15,6 +16,7 @@ function App() {
     { id: 'quiz', label: 'Quiz', icon: BookOpen },
     { id: 'labs', label: 'Labs', icon: Code },
     { id: 'progress', label: 'Progress', icon: Calendar },
+    { id: 'admin', label: 'Admin', icon: Settings },
   ]
 
   return (
@@ -58,6 +60,7 @@ function App() {
         {activeTab === 'quiz' && <QuizPage />}
         {activeTab === 'labs' && <LabsPage />}
         {activeTab === 'progress' && <ProgressPage />}
+        {activeTab === 'admin' && <AdminPage />}
       </main>
 
       {/* Footer */}

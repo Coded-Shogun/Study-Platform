@@ -44,14 +44,26 @@ class QuizSessionResponse(BaseModel):
 @router.get("/questions", response_model=List[QuestionResponse])
 async def get_questions(
     domain: Optional[str] = None,
+    student_level: Optional[str] = None,
+    subject_id: Optional[int] = None,
+    difficulty: Optional[str] = None,
     limit: int = 10,
     db: Session = Depends(get_db)
 ):
-    """Get quiz questions, optionally filtered by domain"""
+    """Get quiz questions, optionally filtered by domain, student level, subject, or difficulty"""
     query = db.query(Question)
 
     if domain:
         query = query.filter(Question.domain == domain)
+
+    if student_level:
+        query = query.filter(Question.student_level == student_level)
+
+    if subject_id:
+        query = query.filter(Question.subject_id == subject_id)
+
+    if difficulty:
+        query = query.filter(Question.difficulty == difficulty)
 
     questions = query.limit(limit).all()
     return questions

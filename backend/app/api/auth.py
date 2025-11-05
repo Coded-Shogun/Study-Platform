@@ -5,7 +5,7 @@ from typing import Optional
 from datetime import datetime
 
 from ..utils.database import get_db
-from ..models.user import User
+from ..models.user import User, UserRole, StudentLevel
 
 router = APIRouter()
 
@@ -14,12 +14,16 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     full_name: Optional[str] = None
+    role: Optional[str] = "student"  # admin, teacher, student
+    student_level: Optional[str] = None  # primary, high_school, tertiary (required for students)
 
 class UserResponse(BaseModel):
     id: int
     username: str
     email: str
     full_name: Optional[str]
+    role: str
+    student_level: Optional[str]
     is_active: bool
     created_at: datetime
 
@@ -44,12 +48,38 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="Username or email already registered"
         )
 
+    # Validate student_level is provided for students
+    if user.role == "student" and not user.student_level:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Student level is required for student accounts (primary, high_school, or tertiary)"
+        )
+
+    # Validate role value
+    valid_roles = ["admin", "teacher", "student"]
+    if user.role not in valid_roles:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}"
+        )
+
+    # Validate student_level value if provided
+    if user.student_level:
+        valid_levels = ["primary", "high_school", "tertiary"]
+        if user.student_level not in valid_levels:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid student level. Must be one of: {', '.join(valid_levels)}"
+            )
+
     # Create new user (in production, hash the password!)
     db_user = User(
         username=user.username,
         email=user.email,
         hashed_password=user.password,  # TODO: Hash password in production
-        full_name=user.full_name
+        full_name=user.full_name,
+        role=user.role,
+        student_level=user.student_level
     )
 
     db.add(db_user)
@@ -75,7 +105,9 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         "user": {
             "id": user.id,
             "username": user.username,
-            "email": user.email
+            "email": user.email,
+            "role": user.role,
+            "student_level": user.student_level
         }
     }
 
