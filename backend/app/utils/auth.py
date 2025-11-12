@@ -1,5 +1,7 @@
 """
 Authentication dependencies for FastAPI routes
+
+Includes token revocation checking for enhanced security.
 """
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -8,6 +10,7 @@ from typing import Optional
 
 from .database import get_db
 from .security import decode_token, verify_token_type
+from .session import is_token_revoked
 from ..models import User, UserRole
 
 # Security scheme for JWT bearer tokens
@@ -19,13 +22,28 @@ def get_current_user(
     db: Session = Depends(get_db)
 ) -> User:
     """
-    Get the current authenticated user from JWT token
+    Get the current authenticated user from JWT token.
+
+    Checks:
+    1. Token validity and signature
+    2. Token type (access vs refresh)
+    3. Token revocation status
+    4. User existence and active status
     """
     token = credentials.credentials
 
     # Decode and verify token
     payload = decode_token(token)
     verify_token_type(payload, "access")
+
+    # Extract JWT ID and check revocation
+    jti: Optional[str] = payload.get("jti")
+    if jti and is_token_revoked(db, jti):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     # Extract user ID from token
     user_id: Optional[int] = payload.get("sub")
