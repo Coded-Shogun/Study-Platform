@@ -209,3 +209,35 @@ def admin_headers(admin_token):
 def teacher_headers(teacher_token):
     """Generate authorization headers with teacher bearer token"""
     return {"Authorization": f"Bearer {teacher_token}"}
+
+
+@pytest.fixture
+def student_user(db_session):
+    """Create a sample student user (alias for sample_user for consistency)"""
+    user = User(
+        username="student",
+        email="student@example.com",
+        hashed_password=get_password_hash("Student123!"),
+        full_name="Student User",
+        role=UserRole.STUDENT,
+        student_level=StudentLevel.HIGH_SCHOOL,
+        is_active=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def mock_request():
+    """Create a mock request object for testing"""
+    from unittest.mock import Mock
+
+    request = Mock()
+    request.client.host = "127.0.0.1"
+    request.headers = {
+        "user-agent": "Mozilla/5.0 (Test Browser)"
+    }
+
+    return request

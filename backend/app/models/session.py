@@ -5,7 +5,7 @@ Session management models for tracking user sessions and token revocation.
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
-from app.database import Base
+from app.utils.database import Base
 
 
 class UserSession(Base):

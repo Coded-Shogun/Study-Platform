@@ -5,7 +5,7 @@ Audit logging models for compliance and security tracking.
 from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.database import Base
+from app.utils.database import Base
 
 
 class AuditLog(Base):
@@ -44,7 +44,7 @@ class AuditLog(Base):
 
     # Additional context
     description = Column(Text, nullable=True)
-    metadata = Column(JSON, nullable=True)  # Additional contextual data
+    additional_metadata = Column(JSON, nullable=True)  # Additional contextual data
 
     # Security & integrity
     request_id = Column(String(50), nullable=True, index=True)  # For correlating related events
@@ -99,7 +99,7 @@ class SecurityEvent(Base):
     alert_recipients = Column(JSON, nullable=True)
 
     # Additional data
-    metadata = Column(JSON, nullable=True)
+    additional_metadata = Column(JSON, nullable=True)
     related_audit_log_id = Column(Integer, ForeignKey("audit_logs.id"), nullable=True)
 
     # Relationships

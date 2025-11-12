@@ -7,7 +7,7 @@ Supports GDPR Articles 6, 7, 15, 17, 20
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, JSON, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.database import Base
+from app.utils.database import Base
 
 
 class ConsentRecord(Base):
@@ -41,7 +41,7 @@ class ConsentRecord(Base):
     method = Column(String(50), nullable=False)  # "explicit_checkbox", "click_through", etc.
 
     # Additional context
-    metadata = Column(JSON, nullable=True)
+    additional_metadata = Column(JSON, nullable=True)
     notes = Column(Text, nullable=True)
 
     # Timestamps
