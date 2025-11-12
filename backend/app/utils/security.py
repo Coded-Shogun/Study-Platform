@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
+import uuid
 
 from ..config import settings
 
@@ -48,9 +49,9 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
     return True, ""
 
 
-def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None, jti: Optional[str] = None) -> str:
     """
-    Create a JWT access token
+    Create a JWT access token with JTI for revocation support
     """
     to_encode = data.copy()
 
@@ -59,31 +60,44 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
+    # Generate JTI if not provided
+    if not jti:
+        jti = str(uuid.uuid4())
+
     to_encode.update({
         "exp": expire,
         "iat": datetime.utcnow(),
-        "type": "access"
+        "type": "access",
+        "jti": jti
     })
 
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 
-def create_refresh_token(data: Dict[str, Any]) -> str:
+def create_refresh_token(data: Dict[str, Any], jti: Optional[str] = None) -> tuple[str, str]:
     """
-    Create a JWT refresh token (longer expiry)
+    Create a JWT refresh token (longer expiry) with JTI for session tracking
+
+    Returns:
+        Tuple of (token, jti) - the token and its JTI for session management
     """
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
+    # Generate JTI if not provided
+    if not jti:
+        jti = str(uuid.uuid4())
+
     to_encode.update({
         "exp": expire,
         "iat": datetime.utcnow(),
-        "type": "refresh"
+        "type": "refresh",
+        "jti": jti
     })
 
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
+    return encoded_jwt, jti
 
 
 def decode_token(token: str) -> Dict[str, Any]:

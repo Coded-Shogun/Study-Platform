@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, validator
 from typing import Optional
@@ -15,6 +15,14 @@ from ..utils.security import (
     verify_token_type
 )
 from ..utils.auth import get_current_user, get_current_active_user
+from ..utils.audit import (
+    log_auth_event,
+    log_audit_event,
+    log_failed_login_attempt,
+    EventType,
+    EventCategory,
+    EventResult,
+)
 from ..models.user import User, UserRole, StudentLevel
 from ..config import settings
 
@@ -110,7 +118,7 @@ class PasswordChangeRequest(BaseModel):
 # ==================== Auth Endpoints ====================
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(user: UserCreate, db: Session = Depends(get_db)):
+async def register(user: UserCreate, request: Request, db: Session = Depends(get_db)):
     """
     Register a new user with hashed password
     """
@@ -120,6 +128,16 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     ).first()
 
     if existing_user:
+        # Log failed registration attempt
+        log_auth_event(
+            db=db,
+            request=request,
+            event_type=EventType.REGISTER,
+            result=EventResult.FAILURE,
+            username=user.username.lower(),
+            description="Registration failed: username or email already exists"
+        )
+
         if existing_user.username == user.username.lower():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -148,11 +166,22 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
 
+    # Log successful registration
+    log_auth_event(
+        db=db,
+        request=request,
+        event_type=EventType.REGISTER,
+        result=EventResult.SUCCESS,
+        user=db_user,
+        description=f"New user registered with role: {db_user.role}",
+        metadata={"role": db_user.role, "student_level": db_user.student_level}
+    )
+
     return db_user
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
+async def login(login_data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     """
     Login user and return JWT tokens
     """
@@ -161,6 +190,14 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
     # Verify user exists and password is correct
     if not user or not verify_password(login_data.password, user.hashed_password):
+        # Log failed login attempt (includes brute force detection)
+        log_failed_login_attempt(
+            db=db,
+            request=request,
+            username=login_data.username.lower(),
+            reason="Invalid credentials"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -169,6 +206,16 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
     # Check if user is active
     if not user.is_active:
+        # Log failed login - inactive account
+        log_auth_event(
+            db=db,
+            request=request,
+            event_type=EventType.LOGIN_FAILED,
+            result=EventResult.FAILURE,
+            user=user,
+            description="Login failed: account inactive"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is inactive. Please contact support."
@@ -177,6 +224,16 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     # Create tokens
     access_token = create_access_token(data={"sub": user.id, "role": user.role})
     refresh_token = create_refresh_token(data={"sub": user.id})
+
+    # Log successful login
+    log_auth_event(
+        db=db,
+        request=request,
+        event_type=EventType.LOGIN,
+        result=EventResult.SUCCESS,
+        user=user,
+        description="User logged in successfully"
+    )
 
     return {
         "access_token": access_token,
@@ -187,7 +244,7 @@ async def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(token_request: RefreshTokenRequest, db: Session = Depends(get_db)):
+async def refresh_token(token_request: RefreshTokenRequest, request: Request, db: Session = Depends(get_db)):
     """
     Refresh access token using refresh token
     """
@@ -215,6 +272,16 @@ async def refresh_token(token_request: RefreshTokenRequest, db: Session = Depend
     access_token = create_access_token(data={"sub": user.id, "role": user.role})
     new_refresh_token = create_refresh_token(data={"sub": user.id})
 
+    # Log token refresh
+    log_auth_event(
+        db=db,
+        request=request,
+        event_type=EventType.TOKEN_REFRESH,
+        result=EventResult.SUCCESS,
+        user=user,
+        description="Access token refreshed"
+    )
+
     return {
         "access_token": access_token,
         "refresh_token": new_refresh_token,
@@ -234,6 +301,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_active_
 @router.post("/change-password")
 async def change_password(
     password_data: PasswordChangeRequest,
+    request: Request,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
@@ -242,6 +310,16 @@ async def change_password(
     """
     # Verify current password
     if not verify_password(password_data.current_password, current_user.hashed_password):
+        # Log failed password change attempt
+        log_auth_event(
+            db=db,
+            request=request,
+            event_type=EventType.PASSWORD_CHANGE,
+            result=EventResult.FAILURE,
+            user=current_user,
+            description="Password change failed: incorrect current password"
+        )
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect"
@@ -258,14 +336,38 @@ async def change_password(
     current_user.hashed_password = get_password_hash(password_data.new_password)
     db.commit()
 
+    # Log successful password change
+    log_auth_event(
+        db=db,
+        request=request,
+        event_type=EventType.PASSWORD_CHANGE,
+        result=EventResult.SUCCESS,
+        user=current_user,
+        description="Password changed successfully"
+    )
+
     return {"message": "Password changed successfully"}
 
 
 @router.post("/logout")
-async def logout(current_user: User = Depends(get_current_active_user)):
+async def logout(
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """
     Logout user (client should discard tokens)
     """
+    # Log logout event
+    log_auth_event(
+        db=db,
+        request=request,
+        event_type=EventType.LOGOUT,
+        result=EventResult.SUCCESS,
+        user=current_user,
+        description="User logged out"
+    )
+
     # In a production app, you might want to:
     # 1. Add token to blacklist in Redis
     # 2. Track logout timestamp
