@@ -6,7 +6,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from .utils.database import engine, Base
-from .api import quiz, progress, labs, auth, admin, compliance
+from .api import quiz, progress, labs, auth, admin, compliance, gdpr
 from .middleware import limiter, SecurityHeadersMiddleware, RequestLogMiddleware
 from .config import settings
 
@@ -60,6 +60,7 @@ app.include_router(progress.router, prefix="/api/progress", tags=["progress"])
 app.include_router(labs.router, prefix="/api/labs", tags=["labs"])
 app.include_router(admin.router, tags=["admin"])
 app.include_router(compliance.router, tags=["compliance"])
+app.include_router(gdpr.router, tags=["gdpr"])
 
 
 @app.get("/")

@@ -5,6 +5,13 @@ from .progress import UserProgress, StudySession
 from .subject import Subject, Category
 from .audit import AuditLog, SecurityEvent
 from .session import UserSession, RevokedToken
+from .gdpr import (
+    ConsentRecord,
+    PrivacyPolicyVersion,
+    DataExportRequest,
+    DataDeletionRequest,
+    DataProcessingActivity
+)
 
 __all__ = [
     'User', 'UserRole', 'StudentLevel',
@@ -12,5 +19,7 @@ __all__ = [
     'UserProgress', 'StudySession',
     'Subject', 'Category',
     'AuditLog', 'SecurityEvent',
-    'UserSession', 'RevokedToken'
+    'UserSession', 'RevokedToken',
+    'ConsentRecord', 'PrivacyPolicyVersion', 'DataExportRequest',
+    'DataDeletionRequest', 'DataProcessingActivity'
 ]
