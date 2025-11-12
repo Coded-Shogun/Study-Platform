@@ -6,6 +6,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.utils.database import Base
+from app.utils.encrypted_types import EncryptedString
 
 
 class AuditLog(Base):
@@ -30,8 +31,8 @@ class AuditLog(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     username = Column(String(100), nullable=True)  # Denormalized for retention after user deletion
     user_role = Column(String(20), nullable=True)
-    ip_address = Column(String(45), nullable=True, index=True)  # IPv4 or IPv6
-    user_agent = Column(String(500), nullable=True)
+    ip_address = Column(EncryptedString(200), nullable=True, index=True)  # Encrypted PII (IPv4 or IPv6)
+    user_agent = Column(EncryptedString(700), nullable=True)  # Encrypted PII
 
     # Resource information
     resource_type = Column(String(50), nullable=True, index=True)  # USER, SUBJECT, QUESTION, etc.
@@ -85,8 +86,8 @@ class SecurityEvent(Base):
     # Context
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     username = Column(String(100), nullable=True)
-    ip_address = Column(String(45), nullable=True, index=True)
-    user_agent = Column(String(500), nullable=True)
+    ip_address = Column(EncryptedString(200), nullable=True, index=True)  # Encrypted PII
+    user_agent = Column(EncryptedString(700), nullable=True)  # Encrypted PII
 
     # Response tracking
     status = Column(String(20), nullable=False, default="OPEN", index=True)  # OPEN, INVESTIGATING, RESOLVED

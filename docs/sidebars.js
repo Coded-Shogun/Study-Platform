@@ -60,6 +60,7 @@ const sidebars = {
         'compliance/gdpr-compliance',
         'compliance/session-management',
         'compliance/audit-logging',
+        'compliance/encryption-at-rest',
       ],
     },
     {

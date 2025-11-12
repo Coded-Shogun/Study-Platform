@@ -6,6 +6,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, I
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
 from app.utils.database import Base
+from app.utils.encrypted_types import EncryptedString
 
 
 class UserSession(Base):
@@ -31,9 +32,9 @@ class UserSession(Base):
     last_activity_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     expires_at = Column(DateTime, nullable=False, index=True)  # Absolute session expiration
 
-    # Session metadata
-    ip_address = Column(String(45), nullable=True)
-    user_agent = Column(String(500), nullable=True)
+    # Session metadata (encrypted for privacy)
+    ip_address = Column(EncryptedString(200), nullable=True)  # Encrypted PII
+    user_agent = Column(EncryptedString(700), nullable=True)  # Encrypted PII
 
     # Session state
     is_active = Column(Boolean, default=True, nullable=False, index=True)

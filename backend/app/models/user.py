@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
 from ..utils.database import Base
+from ..utils.encrypted_types import EncryptedString
 
 class UserRole(str, enum.Enum):
     ADMIN = "admin"
@@ -19,9 +20,9 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
+    email = Column(EncryptedString(500), unique=True, index=True, nullable=False)  # Encrypted PII
     hashed_password = Column(String, nullable=False)
-    full_name = Column(String, nullable=True)
+    full_name = Column(EncryptedString(500), nullable=True)  # Encrypted PII
     role = Column(Enum(UserRole), default=UserRole.STUDENT, nullable=False)
     student_level = Column(Enum(StudentLevel), nullable=True)  # Only for students
     is_active = Column(Boolean, default=True)

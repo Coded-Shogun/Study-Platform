@@ -8,6 +8,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, JSON, F
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.utils.database import Base
+from app.utils.encrypted_types import EncryptedString
 
 
 class ConsentRecord(Base):
@@ -35,9 +36,9 @@ class ConsentRecord(Base):
     # Version tracking
     version = Column(String(20), nullable=False)  # Version of terms/policy
 
-    # Evidence of consent
-    ip_address = Column(String(45), nullable=True)
-    user_agent = Column(String(500), nullable=True)
+    # Evidence of consent (encrypted for privacy)
+    ip_address = Column(EncryptedString(200), nullable=True)  # Encrypted PII
+    user_agent = Column(EncryptedString(700), nullable=True)  # Encrypted PII
     method = Column(String(50), nullable=False)  # "explicit_checkbox", "click_through", etc.
 
     # Additional context
