@@ -54,6 +54,16 @@ const sidebars = {
     },
     {
       type: 'category',
+      label: 'Compliance & Security',
+      items: [
+        'compliance/overview',
+        'compliance/gdpr-compliance',
+        'compliance/session-management',
+        'compliance/audit-logging',
+      ],
+    },
+    {
+      type: 'category',
       label: 'API Reference',
       items: [
         'api/overview',
@@ -63,6 +73,8 @@ const sidebars = {
         'api/questions',
         'api/quiz',
         'api/progress',
+        'api/compliance',
+        'api/gdpr',
       ],
     },
   ],
