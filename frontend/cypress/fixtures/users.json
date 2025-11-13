@@ -1,0 +1,18 @@
+{
+  "admin": {
+    "username": "admin",
+    "password": "Admin123!",
+    "role": "admin"
+  },
+  "teacher": {
+    "username": "teacher",
+    "password": "Teacher123!",
+    "role": "teacher"
+  },
+  "student": {
+    "username": "university_student",
+    "password": "Student123!",
+    "role": "student",
+    "student_level": "tertiary"
+  }
+}
